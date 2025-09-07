@@ -1,0 +1,23 @@
+
+# Vector field visualizer
+
+This project allows for visualization of vector fields.
+
+The one in the project is in the following formula.
+
+- Vx(x,y)=x^2 - y^2 - 4
+- Vy(x,y)=2xy
+
+This formula behaves a little like a magnet, and the center of the field follows the mouse.
+
+To build and run the project, you must install the CMake tool and have the OpenGL package available.
+
+If you have all tools including git installed. Just run the following commands
+
+```
+git clone https://github.com/DeeMarchi/vector-field-visualizer
+cd ./vector-field-visualizer
+cmake -S . -B build
+cd ./build
+cmake --build .
+```
