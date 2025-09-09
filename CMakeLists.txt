@@ -21,7 +21,9 @@ FetchContent_MakeAvailable(raylib_cpp)
 
 # Add executable
 add_executable(${PROJECT_NAME} main.cpp)
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20)
+target_compile_options(${PROJECT_NAME} BEFORE PRIVATE -O3 -g -mavx2)
 
 # Link Raylib to the executable
 target_link_libraries(${PROJECT_NAME} PUBLIC raylib raylib_cpp)
