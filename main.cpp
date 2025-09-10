@@ -8,13 +8,11 @@ struct Particle
     raylib::Vector2 position, velocity;
 };
 
-// Define screen dimensions
 const int screenWidth = 800;
 const int screenHeight = 600;
 
-// Define grid dimensions
-const int gridWidth = 12;
-const int gridHeight = 9;
+const int gridWidth = 24;
+const int gridHeight = 18;
 const float vectorLength = 12.0f;
 
 Vector2 VectorFieldFunction(float x, float y) {
@@ -27,23 +25,17 @@ Vector2 VectorFieldFunction(float x, float y) {
 
 void UpdateParticlePosition(Particle &particle, float deltaTime, int subSteps = 4) {
     raylib::Vector2 mousePos = GetMousePosition();
-
     float subSteptime = deltaTime / subSteps;
     for (int i = 0; i < subSteps; ++i) {
-        // Get the vector field at the particle's current position in grid space
         raylib::Vector2 field = VectorFieldFunction(particle.position.x - mousePos.x, particle.position.y - mousePos.y);
-
-        // Move the particle in the direction of the field
-        particle.velocity = field.Normalize() * 10.0f; // Apply the vector field directly to velocity (you could also scale it for effect)
-
-        // Update the particle position in screen space
-        particle.position.x += particle.velocity.x * subSteptime; // Convert back to screen space
-        particle.position.y += particle.velocity.y * subSteptime;
+        particle.velocity = field * subSteptime;
+        particle.position += particle.velocity * subSteptime;
     }
 }
 
-// Function to draw a vector as an arrow
 void DrawVector(raylib::Vector2 position, raylib::Vector2 direction) {
+    float intensity = direction.Clamp(-1.0f, 1.0f).Length();
+    auto arrowColor = ColorLerp(GREEN, RED, intensity);
     direction = Vector2Normalize(direction);
     
     raylib::Vector2 endPos = { position.x + direction.x * vectorLength, position.y + direction.y * vectorLength };
@@ -51,7 +43,6 @@ void DrawVector(raylib::Vector2 position, raylib::Vector2 direction) {
     float arrowSize = 4.0f;
     float angle = std::atan2(direction.y, direction.x);
 
-    auto arrowColor = BLUE;
     DrawLineV(position, endPos, arrowColor);
 
     // Calculate the two points for the arrowhead
@@ -67,6 +58,7 @@ void DrawVectorField(int gridWidth, int gridHeight) {
     raylib::Vector2 mousePos = GetMousePosition();
     int width = GetScreenWidth();
     int height = GetScreenHeight();
+    const float drawScaleFactor = 1.0e-5f;
     for (int y = 0, ySkip = gridHeight; y < height; y += ySkip) {
         for (int x = 0, xSkip = gridWidth; x < width; x += xSkip) {
             raylib::Vector2 position = { static_cast<float>(x), static_cast<float>(y) };
@@ -74,7 +66,7 @@ void DrawVectorField(int gridWidth, int gridHeight) {
                 static_cast<float>(x) - mousePos.x,
                 static_cast<float>(y) - mousePos.y
             );
-            DrawVector(position, vector);
+            DrawVector(position, vector * drawScaleFactor);
         }
     }
 }
@@ -110,7 +102,7 @@ int main() {
         
         for (const auto& particle : particles) {
             Vector2 rectSize = { 5.0f, 5.0f };
-            DrawRectangleV(particle.position, rectSize, RED);
+            DrawRectangleV(particle.position, rectSize, BLUE);
         }
         DrawText("Vector Field Visualization", 10, 10, 20, DARKGRAY);
         DrawFPS(30, 30);
