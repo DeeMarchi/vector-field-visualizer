@@ -2,6 +2,7 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <functional>
 
 struct Particle
 {
@@ -18,18 +19,72 @@ const float vectorLength = 12.0f;
 raylib::Vector2 VectorFieldFunction(const raylib::Vector2 &v) {
     // Vx(x, y) = x^2 - y^2 - 4
     // Vy(x, y) = 2 * x * y
-    float Vx = v.x * v.x - v.y * v.y - 1024.0f;
+    const float magnetLength = 4096.0f;
+    const float strength = 1e-4f;
+    float Vx = v.x * v.x - v.y * v.y - magnetLength;
     float Vy = 2 * v.x * v.y;
-    return { Vx, Vy };
+    return (raylib::Vector2 { Vx, Vy } * strength);
 }
+
+struct Derivative {
+    raylib::Vector2 dPosition; // velocity
+    raylib::Vector2 dVelocity; // acceleration
+};
+
+struct State {
+    raylib::Vector2 position;
+    raylib::Vector2 velocity;
+};
+
+Derivative Evaluate(const State &state) {
+    Derivative output;
+    output.dPosition = state.velocity;
+    output.dVelocity = VectorFieldFunction(state.position); // already offset externally
+    return output;
+}
+
+
+State IntegrateRK4(const State &state, float h) {
+    Derivative k1 = Evaluate(state);
+
+    State s2;
+    s2.position = state.position + k1.dPosition * (h * 0.5f);
+    s2.velocity = state.velocity + k1.dVelocity * (h * 0.5f);
+    Derivative k2 = Evaluate(s2);
+
+    State s3;
+    s3.position = state.position + k2.dPosition * (h * 0.5f);
+    s3.velocity = state.velocity + k2.dVelocity * (h * 0.5f);
+    Derivative k3 = Evaluate(s3);
+
+    State s4;
+    s4.position = state.position + k3.dPosition * h;
+    s4.velocity = state.velocity + k3.dVelocity * h;
+    Derivative k4 = Evaluate(s4);
+
+    State result = state;
+    result.position += (k1.dPosition + k2.dPosition * 2.0f + k3.dPosition * 2.0f + k4.dPosition) * (h / 6.0f);
+    result.velocity += (k1.dVelocity + k2.dVelocity * 2.0f + k3.dVelocity * 2.0f + k4.dVelocity) * (h / 6.0f);
+
+    return result;
+}
+
 
 void UpdateParticlePosition(Particle &particle, float deltaTime, int subSteps = 4) {
     raylib::Vector2 mousePos = GetMousePosition();
     float subSteptime = deltaTime / subSteps;
+    State state{ particle.position - mousePos, particle.velocity };
     for (int i = 0; i < subSteps; ++i) {
-        raylib::Vector2 field = VectorFieldFunction(particle.position - mousePos);
-        particle.velocity = field * subSteptime;
-        particle.position += particle.velocity * subSteptime;
+        state = IntegrateRK4(state, subSteptime);
+    }
+    // re-apply mouse offset when storing position back
+    particle.position = state.position + mousePos;
+    particle.velocity = state.velocity;
+
+    const float maxSpeed = 10.0f;
+    float speed = particle.velocity.Length();
+    if (speed > maxSpeed) {
+        particle.velocity = particle.velocity.Normalize() * maxSpeed;
     }
 }
 
@@ -58,12 +113,11 @@ void DrawVectorField(int gridWidth, int gridHeight) {
     raylib::Vector2 mousePos = GetMousePosition();
     int width = GetScreenWidth();
     int height = GetScreenHeight();
-    const float drawScaleFactor = 2.0e-4f;
     for (int y = 0, ySkip = gridHeight; y < height; y += ySkip) {
         for (int x = 0, xSkip = gridWidth; x < width; x += xSkip) {
             raylib::Vector2 position = { static_cast<float>(x), static_cast<float>(y) };
             raylib::Vector2 vector = VectorFieldFunction(position - mousePos);
-            DrawVector(position, vector * drawScaleFactor);
+            DrawVector(position, vector);
         }
     }
 }
@@ -87,7 +141,7 @@ int main() {
     while (!WindowShouldClose()) {
         float deltaTime = GetFrameTime();
         for (auto &particle : particles) {
-            UpdateParticlePosition(particle, deltaTime, 16);
+            UpdateParticlePosition(particle, deltaTime, 4);
         }
         window.BeginDrawing();
         window.ClearBackground(RAYWHITE);
