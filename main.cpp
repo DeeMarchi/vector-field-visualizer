@@ -15,11 +15,11 @@ const int gridWidth = 24;
 const int gridHeight = 18;
 const float vectorLength = 12.0f;
 
-Vector2 VectorFieldFunction(float x, float y) {
+raylib::Vector2 VectorFieldFunction(const raylib::Vector2 &v) {
     // Vx(x, y) = x^2 - y^2 - 4
     // Vy(x, y) = 2 * x * y
-    float Vx = x * x - y * y - 1024.0f;
-    float Vy = 2 * x * y;
+    float Vx = v.x * v.x - v.y * v.y - 1024.0f;
+    float Vy = 2 * v.x * v.y;
     return { Vx, Vy };
 }
 
@@ -27,7 +27,7 @@ void UpdateParticlePosition(Particle &particle, float deltaTime, int subSteps = 
     raylib::Vector2 mousePos = GetMousePosition();
     float subSteptime = deltaTime / subSteps;
     for (int i = 0; i < subSteps; ++i) {
-        raylib::Vector2 field = VectorFieldFunction(particle.position.x - mousePos.x, particle.position.y - mousePos.y);
+        raylib::Vector2 field = VectorFieldFunction(particle.position - mousePos);
         particle.velocity = field * subSteptime;
         particle.position += particle.velocity * subSteptime;
     }
@@ -62,10 +62,7 @@ void DrawVectorField(int gridWidth, int gridHeight) {
     for (int y = 0, ySkip = gridHeight; y < height; y += ySkip) {
         for (int x = 0, xSkip = gridWidth; x < width; x += xSkip) {
             raylib::Vector2 position = { static_cast<float>(x), static_cast<float>(y) };
-            raylib::Vector2 vector = VectorFieldFunction(
-                static_cast<float>(x) - mousePos.x,
-                static_cast<float>(y) - mousePos.y
-            );
+            raylib::Vector2 vector = VectorFieldFunction(position - mousePos);
             DrawVector(position, vector * drawScaleFactor);
         }
     }
