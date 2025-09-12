@@ -58,7 +58,7 @@ void DrawVectorField(int gridWidth, int gridHeight) {
     raylib::Vector2 mousePos = GetMousePosition();
     int width = GetScreenWidth();
     int height = GetScreenHeight();
-    const float drawScaleFactor = 1.0e-5f;
+    const float drawScaleFactor = 2.0e-4f;
     for (int y = 0, ySkip = gridHeight; y < height; y += ySkip) {
         for (int x = 0, xSkip = gridWidth; x < width; x += xSkip) {
             raylib::Vector2 position = { static_cast<float>(x), static_cast<float>(y) };
@@ -92,7 +92,7 @@ int main() {
         for (auto &particle : particles) {
             UpdateParticlePosition(particle, deltaTime, 16);
         }
-        BeginDrawing();
+        window.BeginDrawing();
         window.ClearBackground(RAYWHITE);
 
         raylib::Vector2 screenCenter(screenWidth / 2.0f, screenHeight / 2.0f);
@@ -106,7 +106,7 @@ int main() {
         }
         DrawText("Vector Field Visualization", 10, 10, 20, DARKGRAY);
         DrawFPS(30, 30);
-        EndDrawing();
+        window.EndDrawing();
     }
     return 0;
 }
