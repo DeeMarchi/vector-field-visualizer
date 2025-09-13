@@ -90,7 +90,11 @@ void UpdateParticlePosition(Particle &particle, float deltaTime, int subSteps = 
 
 void DrawVector(raylib::Vector2 position, raylib::Vector2 direction) {
     float intensity = direction.Clamp(-1.0f, 1.0f).Length();
-    auto arrowColor = ColorLerp(GREEN, RED, intensity);
+    Color arrowColor;
+    if (intensity < 0.5f)
+        arrowColor = ColorLerp(GREEN, YELLOW, intensity * 2.0f);
+    else
+        arrowColor = ColorLerp(YELLOW, RED, (intensity - 0.5f) * 2.0f);
     direction = Vector2Normalize(direction);
     
     raylib::Vector2 endPos = { position.x + direction.x * vectorLength, position.y + direction.y * vectorLength };
@@ -121,6 +125,20 @@ void DrawVectorField(int gridWidth, int gridHeight) {
         }
     }
 }
+
+// void CheckParticlesCollision(std::vector<Particle> &particles) {
+//     for (int i { 0 }, len = particles.size() - 1; i < len; ++i) {
+//         auto &bodyA = particles[i];
+//         for (int j { i + 1 }; j < len; ++j) {
+//             auto &bodyB = particles[j];
+//             if (bodyA.position.CheckCollision(bodyB.position, rectSize.x)) {
+//                 auto normal = (bodyB.position - bodyA.position).Normalize() * rectSize.x * 5.0f;
+//                 bodyA.velocity += -(normal);
+//                 bodyB.velocity += normal;
+//             }
+//         }
+//     }
+// }
 
 int main() {
     raylib::Window window(screenWidth, screenHeight, "Vector Field Generator");
